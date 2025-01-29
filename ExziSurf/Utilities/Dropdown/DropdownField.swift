@@ -28,7 +28,7 @@ struct DropdownField: View {
                         .foregroundColor(chosenItem.text.isEmpty ? .gray : .black)
                         .padding(.leading, 20)
                         .frame(height: 26)
-
+                        .accessibilityIdentifier("dropdownItem-\(chosenItem.text)")
                     Divider()
                         .frame(width: UIScreen.main.bounds.width, height: 1)
                         .background(Color.black)
