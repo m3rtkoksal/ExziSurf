@@ -78,15 +78,13 @@ class CitySelectionVM: ObservableObject {
             DropdownItemModel(id: city, text: city)
         }
     }
-    
+    @MainActor
     func fetchWeather(for city: String, countryCode: String) async {
         await weatherManager.fetchWeather(for: city, countryCode: countryCode)
         if let firstWeatherData = weatherManager.weatherData.first {
-            DispatchQueue.main.async {
-                self.weatherData = firstWeatherData
-                self.optimalSurfingTimes = self.weatherManager.optimalSurfingTimes
-                self.isNavigatingToWeather = true
-            }
+            self.weatherData = firstWeatherData
+            self.optimalSurfingTimes = self.weatherManager.optimalSurfingTimes
+            self.isNavigatingToWeather = true
         }
     }
 }

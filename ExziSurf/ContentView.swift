@@ -13,6 +13,12 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             VStack {
+                Image(systemName: "surfboard.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(.indigo, .white)
+                    .frame(width: 150)
+                    
                 Text("Welcome to the Surf App!")
                     .font(.largeTitle)
                     .padding()
@@ -21,9 +27,12 @@ struct ContentView: View {
                     showCitySelection = true // This will trigger the navigation
                 } label: {
                     Text("Enter")
+                        .font(.largeTitle)
+                        .bold()
                         .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
+                        .padding(.horizontal, 50)
+                        .background(Color.indigo)
+                        .foregroundColor(.black)
                         .cornerRadius(10)
                 }
                 
@@ -32,7 +41,7 @@ struct ContentView: View {
                     EmptyView()
                 }
             }
-            .navigationTitle("Surf App")
+            .navigationTitle("🤙")
         }
     }
 }

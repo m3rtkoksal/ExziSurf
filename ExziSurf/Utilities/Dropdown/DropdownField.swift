@@ -18,22 +18,22 @@ struct DropdownField: View {
             Button {
                 isExpanded.toggle()
             } label: {
-                VStack(alignment: .leading, spacing: 0) {
-                    Divider()
-                        .frame(width: UIScreen.main.bounds.width, height: 1)
-                        .background(Color.black)
-
-                    Text(chosenItem.text.isEmpty ? title : chosenItem.text)
-                        .font(.system(size: 14))
-                        .foregroundColor(chosenItem.text.isEmpty ? .gray : .black)
-                        .padding(.leading, 20)
-                        .frame(height: 26)
-                        .accessibilityIdentifier("dropdownItem-\(chosenItem.text)")
-                    Divider()
-                        .frame(width: UIScreen.main.bounds.width, height: 1)
-                        .background(Color.black)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .foregroundColor(Color.white)
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.indigo, lineWidth: 1)
+                        .overlay(
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(chosenItem.text.isEmpty ? title : chosenItem.text)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(chosenItem.text.isEmpty ? .gray : .black)
+                                    .accessibilityIdentifier("dropdownItem-\(chosenItem.text)")
+                            }
+                        )
                 }
-                .frame(height: 46)
+                .frame(height: 50)
+                .padding(.horizontal, 20)
             }
             .background(Color.white)
         }

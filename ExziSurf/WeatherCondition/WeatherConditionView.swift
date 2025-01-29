@@ -10,6 +10,8 @@ import SwiftUI
 struct WeatherConditionView: View {
     var weather: WeatherData?
     var optimalSurfingTimes: [SurfingTime]?
+    var city: String
+    var country: String
     
     var body: some View {
         VStack {
@@ -51,5 +53,6 @@ struct WeatherConditionView: View {
             }
         }
         .padding()
+        .navigationTitle("\(city), \(country)")
     }
 }

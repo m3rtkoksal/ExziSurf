@@ -46,7 +46,8 @@ class WeatherAPIManager: ObservableObject {
     private let apiKey = "a7bc966cca5a4a358afd4e95d84c432a"
     private let baseURL = "https://api.weatherbit.io/v2.0/forecast/hourly"
     private let urlSession: URLSessionProtocol
-    
+    @Published var city: String = ""
+    @Published var country: String = ""
     @Published var weatherData: [WeatherData] = []
     @Published var optimalSurfingTimes: [SurfingTime] = []
     
@@ -74,9 +75,12 @@ class WeatherAPIManager: ObservableObject {
             // Assign the weather data to the published variable
             await MainActor.run {
                 self.weatherData = decodedResponse.data
+                self.city = decodedResponse.city_name
+                self.country = decodedResponse.country_code
             }
             
-            print("Fetched weather data: \(self.weatherData)")
+            print("Requested weather city: \(self.city)")
+            print("Requested weather country: \(self.country)")
             // Now that the weather data is fetched, calculate the optimal surfing times
             let optimalTimes = getOptimalSurfingTimes()
           

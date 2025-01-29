@@ -24,7 +24,7 @@ struct CitySelectionView: View {
     
     var body: some View {
         ZStack {
-            VStack(spacing: 5) {
+            VStack(spacing: 25) {
                 DropdownField(
                     title: "Please Select Country",
                     isExpanded: $isCountryExpanded,
@@ -33,10 +33,9 @@ struct CitySelectionView: View {
                 .onTapGesture {
                     isCountryExpanded = true
                 }
-                .onChange(of: selectedCountryItem) { oldValue, newValue in
-                    if oldValue.id != newValue.id { // Prevent redundant updates
+                .onChange(of: selectedCountryItem) { newValue in
                         viewModel.selectedCountry = newValue.text
-                    }
+                        selectedCityItem = DropdownItemModel(id: "", text: "")
                 }
                 DropdownField(
                     title: "Please Select City",
@@ -46,11 +45,7 @@ struct CitySelectionView: View {
                 .onTapGesture {
                     isCityExpanded = true
                 }
-                .onChange(of: selectedCityItem) { oldValue, newValue in
-                    if newValue.text.isEmpty {
-                        selectedCityItem = viewModel.cities.first ?? DropdownItemModel(id: "", text: "")
-                    }
-                }
+              
                 Spacer()
                 Button {
                     Task {
@@ -58,14 +53,16 @@ struct CitySelectionView: View {
                     }
                 } label: {
                     Text("Check Weather")
+                        .font(.largeTitle)
+                        .bold()
                         .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
+                        .background(Color.indigo)
+                        .foregroundColor(.black)
                         .cornerRadius(10)
                         .opacity(selectedCityItem.text.isEmpty ? 0.5 : 1)
                 }
                 .disabled(selectedCityItem.text.isEmpty)
-                NavigationLink(destination: WeatherConditionView(weather: viewModel.weatherData, optimalSurfingTimes: viewModel.optimalSurfingTimes), isActive: $viewModel.isNavigatingToWeather) {
+                NavigationLink(destination: WeatherConditionView(weather: viewModel.weatherData, optimalSurfingTimes: viewModel.optimalSurfingTimes, city: selectedCityItem.text, country: selectedCountryItem.text), isActive: $viewModel.isNavigatingToWeather) {
                     EmptyView()
                 }
             }
@@ -75,9 +72,6 @@ struct CitySelectionView: View {
         .pickerModifier(options: $viewModel.cities, isExpanded: $isCityExpanded, selectedItem: $selectedCityItem)
         .onAppear {
             viewModel.selectedCountry = selectedCountryItem.text // Ensure initial cities load
-            if let firstCity = viewModel.cities.first {
-                selectedCityItem = firstCity
-            }
         }
     }
 }
