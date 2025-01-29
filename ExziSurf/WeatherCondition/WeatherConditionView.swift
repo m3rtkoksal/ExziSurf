@@ -23,7 +23,7 @@ struct WeatherConditionView: View {
                     .font(.title2)
                 
                 // Surfing Score
-                let surfingScore = WeatherAPIManager().calculateSurfingScore(weather: weather)
+                let surfingScore = WeatherAPIManager(urlSession: URLSession.shared).calculateSurfingScore(weather: weather)
                 Text("🏄 Surfing Score: \(surfingScore, specifier: "%.1f")")
                     .font(.title2)
                     .foregroundColor(surfingScore > 70 ? .green : .red)

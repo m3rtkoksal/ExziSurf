@@ -17,7 +17,7 @@ struct CitySelectionView: View {
     @State private var tempCity: String = ""
     @State private var selectedCountryItem = DropdownItemModel(id: "", text: "")
     @State private var selectedCityItem = DropdownItemModel(id: "", text: "")
-    @StateObject private var weatherManager = WeatherAPIManager()
+    @StateObject private var weatherManager = WeatherAPIManager(urlSession: URLSession.shared)
     @State private var isNavigatingToWeather = false
     @State private var weatherData: WeatherData?
     @State private var optimalSurfingTimes: [SurfingTime] = []

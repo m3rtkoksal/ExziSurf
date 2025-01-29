@@ -34,12 +34,25 @@ struct SurfingTime: Identifiable {
     var score: Double
 }
 
+// Define the protocol
+protocol URLSessionProtocol {
+    func data(from url: URL) async throws -> (Data, URLResponse)
+}
+
+// Conform URLSession to the protocol
+extension URLSession: URLSessionProtocol {}
+
 class WeatherAPIManager: ObservableObject {
     private let apiKey = "a7bc966cca5a4a358afd4e95d84c432a"
     private let baseURL = "https://api.weatherbit.io/v2.0/forecast/hourly"
+    private let urlSession: URLSessionProtocol
     
     @Published var weatherData: [WeatherData] = []
     @Published var optimalSurfingTimes: [SurfingTime] = []
+    
+    init(urlSession: URLSessionProtocol) {
+        self.urlSession = urlSession
+    }
     
     // Fetch weather data for a given city and country code
     func fetchWeather(for city: String, countryCode: String) async {

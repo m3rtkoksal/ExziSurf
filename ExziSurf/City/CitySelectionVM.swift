@@ -12,7 +12,7 @@ class CitySelectionVM: ObservableObject {
     @Published var optimalSurfingTimes: [SurfingTime] = []
     @Published var isNavigatingToWeather: Bool = false
 
-    private var weatherManager = WeatherAPIManager()
+    private var weatherManager = WeatherAPIManager(urlSession: URLSession.shared)
     
     @Published var countriesDict = [
         "Turkey": "TR",

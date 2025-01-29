@@ -9,6 +9,29 @@
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
+		<key>ExziSurfTests.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
+	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>8E89B9992D4A459500E64C9D</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>8E89B9A92D4A459800E64C9D</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>8E89B9B32D4A459800E64C9D</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 	</dict>
 </dict>
 </plist>
