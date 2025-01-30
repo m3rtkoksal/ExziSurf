@@ -110,4 +110,32 @@ final class ExziSurfTests: XCTestCase {
         XCTAssertEqual(optimalTimes.first?.score, 100) // Highest score should be first
         XCTAssertEqual(optimalTimes.last?.score, 50) // Lowest score should be last
     }
+    
+    func testFilteringValidSurfingConditions() {
+        let mockWeatherData = [
+            WeatherData(app_temp: 21.0, clouds: 10, datetime: "2023-10-01:08", temp: 22.0, wind_spd: 12.0, weather: WeatherCondition(icon: "c01d", description: "Clear sky", code: 800)), // Valid
+            WeatherData(app_temp: 19.0, clouds: 80, datetime: "2023-10-01:10", temp: 19.0, wind_spd: 25.0, weather: WeatherCondition(icon: "c04d", description: "Overcast", code: 803)), // Invalid (high wind speed)
+            WeatherData(app_temp: 25.0, clouds: 5, datetime: "2023-10-01:14", temp: 25.0, wind_spd: 8.0, weather: WeatherCondition(icon: "c02d", description: "Partly cloudy", code: 801)) // Valid
+        ]
+        
+        weatherAPIManager.weatherData = mockWeatherData
+        let filteredTimes = weatherAPIManager.getOptimalSurfingTimes()
+        
+        XCTAssertEqual(filteredTimes.count, 2, "Only valid weather conditions should be included.")
+    }
+
+    func testRankingBySurfingScore() {
+        let mockWeatherData = [
+            WeatherData(app_temp: 20.0, clouds: 15, datetime: "2023-10-01:09", temp: 21.0, wind_spd: 10.0, weather: WeatherCondition(icon: "c01d", description: "Clear sky", code: 800)), // Score ~100
+            WeatherData(app_temp: 22.0, clouds: 10, datetime: "2023-10-01:11", temp: 23.0, wind_spd: 9.0, weather: WeatherCondition(icon: "c02d", description: "Partly cloudy", code: 801)), // Score ~90
+            WeatherData(app_temp: 19.0, clouds: 5, datetime: "2023-10-01:13", temp: 20.0, wind_spd: 12.0, weather: WeatherCondition(icon: "c01d", description: "Clear sky", code: 800)) // Score ~85
+        ]
+
+        weatherAPIManager.weatherData = mockWeatherData
+        let rankedTimes = weatherAPIManager.getOptimalSurfingTimes()
+        
+        XCTAssertEqual(rankedTimes.count, 3, "All valid times should be included.")
+        XCTAssertGreaterThan(rankedTimes.first!.score, rankedTimes.last!.score, "First element should have the highest score.")
+    }
+
 }

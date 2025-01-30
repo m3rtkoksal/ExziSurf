@@ -71,7 +71,7 @@ struct CitySelectionView: View {
         .pickerModifier(options: $viewModel.countries, isExpanded: $isCountryExpanded, selectedItem: $selectedCountryItem)
         .pickerModifier(options: $viewModel.cities, isExpanded: $isCityExpanded, selectedItem: $selectedCityItem)
         .onAppear {
-            viewModel.selectedCountry = selectedCountryItem.text // Ensure initial cities load
+            viewModel.selectedCountry = selectedCountryItem.text
         }
     }
 }

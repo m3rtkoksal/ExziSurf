@@ -100,4 +100,6 @@ final class ExziSurfUITests: XCTestCase {
         let citySelectionView = app.staticTexts["City Selection"]
         XCTAssertTrue(citySelectionView.exists) // Assuming the CitySelectionView has a staticText element with this label
     }
+    
+    
 }

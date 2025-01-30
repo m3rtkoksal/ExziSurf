@@ -129,25 +129,32 @@ class WeatherAPIManager: ObservableObject {
     }
     
     func getOptimalSurfingTimes() -> [SurfingTime] {
-        let filteredTimes = weatherData.map { weather in
-            // Convert the datetime string to Date
-            let datetime = parseDatetimeString(datetimeString: weather.datetime)
-            
-            // Calculate the surfing score using the new formula
-            let score = calculateSurfingScore(weather: weather)
-            
-            // Return the SurfingTime with the Date (instead of string)
-            return SurfingTime(datetime: datetime, score: score)
-        }
-        .filter { timeRange in
-            // Only include the times that fall between 6 AM and 6 PM
-            let time = getHourFromDatetime(datetime: timeRange.datetime)
-            return time >= 6 && time <= 18
-        }
-        .sorted { a, b in
-            // Sort by highest surfing score
-            return a.score > b.score
-        }
+        let filteredTimes = weatherData
+            .filter { weather in
+                // Filter only for Clear, Partly Cloudy, or Mostly Cloudy conditions
+                let allowedWeatherCodes: Set<Int> = [800, 801, 802] // 800: Clear, 801: Few Clouds, 802: Scattered Clouds
+                return allowedWeatherCodes.contains(weather.weather.code)
+            }
+            .map { weather in
+                // Convert the datetime string to Date
+                let datetime = parseDatetimeString(datetimeString: weather.datetime)
+                
+                // Calculate the surfing score using the new formula
+                let score = calculateSurfingScore(weather: weather)
+                
+                // Return the SurfingTime with the Date (instead of string)
+                return SurfingTime(datetime: datetime, score: score)
+            }
+            .filter { timeRange in
+                // Only include the times that fall between 6 AM and 6 PM
+                let time = getHourFromDatetime(datetime: timeRange.datetime)
+                return time >= 6 && time <= 18
+            }
+            .sorted { a, b in
+                // Sort by highest surfing score
+                return a.score > b.score
+            }
+        
         return filteredTimes
     }
 
