@@ -12,7 +12,7 @@ class CitySelectionVM: ObservableObject {
     @Published var optimalSurfingTimes: [SurfingTime] = []
     @Published var isNavigatingToWeather: Bool = false
 
-    private var weatherManager = WeatherAPIManager(urlSession: URLSession.shared)
+    private var weatherManager: WeatherAPIManager
     
     @Published var countriesDict = [
         "Turkey": "TR",
@@ -57,9 +57,10 @@ class CitySelectionVM: ObservableObject {
             updateCities()
         }
     }
-    
-    init() {
-        // Convert countriesDict to DropdownItemModel array
+    init(weatherService: WeatherServiceProtocol) {
+        self.weatherManager = WeatherAPIManager(weatherService: weatherService)
+        
+        // Initialize countries from countriesDict
         self.countries = countriesDict.map { (key, value) in
             DropdownItemModel(id: value, text: key)
         }
@@ -78,13 +79,23 @@ class CitySelectionVM: ObservableObject {
             DropdownItemModel(id: city, text: city)
         }
     }
+    
     @MainActor
     func fetchWeather(for city: String, countryCode: String) async {
-        await weatherManager.fetchWeather(for: city, countryCode: countryCode)
-        if let firstWeatherData = weatherManager.weatherData.first {
-            self.weatherData = firstWeatherData
-            self.optimalSurfingTimes = self.weatherManager.optimalSurfingTimes
-            self.isNavigatingToWeather = true
+        do {
+            // Add try to call the throwing function
+            try await weatherManager.fetchWeather(for: city, countryCode: countryCode)
+            
+            // After fetching, ensure the data is available and update properties
+            if let firstWeatherData = weatherManager.weatherData.first {
+                self.weatherData = firstWeatherData
+                self.optimalSurfingTimes = weatherManager.optimalSurfingTimes
+                self.isNavigatingToWeather = true
+            }
+        } catch {
+            // Handle any errors that might occur during the API call
+            print("Error fetching weather data: \(error.localizedDescription)")
         }
     }
+
 }

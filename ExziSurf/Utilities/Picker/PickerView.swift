@@ -11,13 +11,28 @@ struct PickerView: View {
     @Binding var options: [DropdownItemModel]
     @Binding var selectedItem: DropdownItemModel
     @Binding var isExpanded: Bool
+    @State private var searchText: String = ""
+    
+    private var filteredOptions: [DropdownItemModel] {
+        if searchText.isEmpty {
+            return options
+        } else {
+            return options.filter {
+                $0.text.lowercased().contains(searchText.lowercased())
+            }
+        }
+    }
     
     var body: some View {
         VStack(spacing: 0) {
             if isExpanded {
+                TextField("Search", text: $searchText)
+                    .onChange(of: searchText) { _ in
+                        // Updates the filtered options as the user types
+                    }
                 VStack(spacing: 20) {
                     ScrollView(showsIndicators: false) {
-                        ForEach(options, id: \.self) { item in
+                        ForEach(filteredOptions, id: \.self) { item in
                             Button(action: {
                                 withAnimation {
                                     selectedItem = item

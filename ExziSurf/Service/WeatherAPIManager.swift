@@ -7,6 +7,13 @@
 
 import Foundation
 
+enum WeatherAPIError: Error {
+    case networkError
+    case invalidData
+    case cityNotFound
+    case unknownError
+}
+
 struct WeatherAPIResponse: Decodable {
     let city_name: String
     let country_code: String
@@ -34,6 +41,10 @@ struct SurfingTime: Identifiable {
     var score: Double
 }
 
+protocol WeatherServiceProtocol {
+    func fetchWeather(for city: String, countryCode: String) async throws -> WeatherAPIResponse
+}
+
 // Define the protocol
 protocol URLSessionProtocol {
     func data(from url: URL) async throws -> (Data, URLResponse)
@@ -43,71 +54,57 @@ protocol URLSessionProtocol {
 extension URLSession: URLSessionProtocol {}
 
 class WeatherAPIManager: ObservableObject {
-    private let apiKey = "a7bc966cca5a4a358afd4e95d84c432a"
-    private let baseURL = "https://api.weatherbit.io/v2.0/forecast/hourly"
-    private let urlSession: URLSessionProtocol
     @Published var city: String = ""
     @Published var country: String = ""
     @Published var weatherData: [WeatherData] = []
     @Published var optimalSurfingTimes: [SurfingTime] = []
     
-    init(urlSession: URLSessionProtocol) {
-        self.urlSession = urlSession
+    private let weatherService: WeatherServiceProtocol
+    
+    init(weatherService: WeatherServiceProtocol) {
+        self.weatherService = weatherService
     }
     
-    // Fetch weather data for a given city and country code
-    func fetchWeather(for city: String, countryCode: String) async {
-        let cityWithCountry = "\(city),\(countryCode)"
-        
-        // Construct the URL
-        guard let url = URL(string: "\(baseURL)?city=\(cityWithCountry)&key=\(apiKey)&hours=48") else {
-            print("Invalid URL")
-            return
-        }
-        
-        // Perform the network request
+    func fetchWeather(for city: String, countryCode: String) async throws {
         do {
-            let (data, _) = try await URLSession.shared.data(from: url)
+            let response = try await weatherService.fetchWeather(for: city, countryCode: countryCode)
             
-            // Decode the response using the updated model
-            let decodedResponse = try JSONDecoder().decode(WeatherAPIResponse.self, from: data)
-            
-            // Assign the weather data to the published variable
-            await MainActor.run {
-                self.weatherData = decodedResponse.data
-                self.city = decodedResponse.city_name
-                self.country = decodedResponse.country_code
+            guard !response.data.isEmpty, !response.city_name.isEmpty, !response.country_code.isEmpty else {
+                throw WeatherAPIError.invalidData
             }
             
-            print("Requested weather city: \(self.city)")
-            print("Requested weather country: \(self.country)")
-            // Now that the weather data is fetched, calculate the optimal surfing times
+            await MainActor.run {
+                self.weatherData = response.data
+                self.city = response.city_name
+                self.country = response.country_code
+            }
+            
             let optimalTimes = getOptimalSurfingTimes()
-          
             await MainActor.run {
                 self.optimalSurfingTimes = optimalTimes
             }
             
+        } catch let error as URLError {
+            // Handle specific network-related errors
+            switch error.code {
+            case .notConnectedToInternet:
+                throw WeatherAPIError.networkError
+            case .timedOut:
+                throw WeatherAPIError.networkError
+            default:
+                throw WeatherAPIError.networkError
+            }
         } catch {
-            print("Error fetching weather data: \(error.localizedDescription)")
+            // Handle any other error, such as decoding errors or general network errors
+            throw WeatherAPIError.networkError
         }
     }
-    
+
     // Function to calculate surfing score for each hour
     func calculateSurfingScore(weather: WeatherData) -> Double {
-        // Calculate wind score based on wind speed
         let windScore = 18 - abs(weather.wind_spd - 12)
-        
-        // Calculate temperature score based on temperature
         let tempScore = 35 - abs(weather.temp - 20)
-        
-        // Combine wind and temperature scores into the final surfing score
-        let surfingScore = (windScore + tempScore) / 2.0
-        
-        // Ensure the score is between 0 and 100
-        let clampedScore = min(max(surfingScore, 0), 100)
-        
-        return clampedScore
+        return min(max((windScore + tempScore) / 2.0, 0), 100)
     }
     
     private func getWindSpeedScore(windSpeed: Double, idealRange: ClosedRange<Double>) -> Double {
@@ -129,35 +126,17 @@ class WeatherAPIManager: ObservableObject {
     }
     
     func getOptimalSurfingTimes() -> [SurfingTime] {
-        let filteredTimes = weatherData
-            .filter { weather in
-                // Filter only for Clear, Partly Cloudy, or Mostly Cloudy conditions
-                let allowedWeatherCodes: Set<Int> = [800, 801, 802] // 800: Clear, 801: Few Clouds, 802: Scattered Clouds
-                return allowedWeatherCodes.contains(weather.weather.code)
-            }
+        weatherData
+            .filter { [800, 801, 802].contains($0.weather.code) }
             .map { weather in
-                // Convert the datetime string to Date
                 let datetime = parseDatetimeString(datetimeString: weather.datetime)
-                
-                // Calculate the surfing score using the new formula
                 let score = calculateSurfingScore(weather: weather)
-                
-                // Return the SurfingTime with the Date (instead of string)
                 return SurfingTime(datetime: datetime, score: score)
             }
-            .filter { timeRange in
-                // Only include the times that fall between 6 AM and 6 PM
-                let time = getHourFromDatetime(datetime: timeRange.datetime)
-                return time >= 6 && time <= 18
-            }
-            .sorted { a, b in
-                // Sort by highest surfing score
-                return a.score > b.score
-            }
-        
-        return filteredTimes
+            .filter { 6...18 ~= getHourFromDatetime(datetime: $0.datetime) }
+            .sorted { $0.score > $1.score }
     }
-
+    
     func parseDatetimeString(datetimeString: String) -> Date {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd:HH"
@@ -170,7 +149,7 @@ class WeatherAPIManager: ObservableObject {
             return Date() // Fallback to current date if parsing fails
         }
     }
-
+    
     func formatDateToString(datetime: Date) -> String {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd:HH"
@@ -178,10 +157,20 @@ class WeatherAPIManager: ObservableObject {
         
         return dateFormatter.string(from: datetime)
     }
-
+    
     func getHourFromDatetime(datetime: Date) -> Int {
         let calendar = Calendar.current
         let components = calendar.dateComponents(in: TimeZone.current, from: datetime)
         return components.hour ?? 0
+    }
+}
+
+class MockWeatherService: WeatherServiceProtocol {
+    func fetchWeather(for city: String, countryCode: String) async throws -> WeatherAPIResponse {
+        return WeatherAPIResponse(
+            city_name: city,
+            country_code: countryCode,
+            data: [WeatherData(app_temp: 22, clouds: 10, datetime: "2025-02-03:12", temp: 21, wind_spd: 10, weather: WeatherCondition(icon: "c01d", description: "Clear", code: 800))]
+        )
     }
 }

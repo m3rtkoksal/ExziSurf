@@ -8,7 +8,11 @@
 import SwiftUI
 
 struct CitySelectionView: View {
-    @StateObject private var viewModel = CitySelectionVM()
+    @StateObject private var viewModel: CitySelectionVM
+    init(weatherService: WeatherServiceProtocol = WeatherAPIService()) {
+        // Initializing the viewModel with the injected weatherService
+        _viewModel = StateObject(wrappedValue: CitySelectionVM(weatherService: weatherService))
+    }
     @State private var selectedCountry: String = "Turkey" // Default country
     @State private var countryCode: String = "TR" // ISO Code
     @State private var isCountryExpanded = false
@@ -17,10 +21,13 @@ struct CitySelectionView: View {
     @State private var tempCity: String = ""
     @State private var selectedCountryItem = DropdownItemModel(id: "", text: "")
     @State private var selectedCityItem = DropdownItemModel(id: "", text: "")
-    @StateObject private var weatherManager = WeatherAPIManager(urlSession: URLSession.shared)
+    @StateObject private var weatherManager = WeatherAPIManager(weatherService: WeatherAPIService())
     @State private var isNavigatingToWeather = false
     @State private var weatherData: WeatherData?
     @State private var optimalSurfingTimes: [SurfingTime] = []
+    
+    @State private var citySearchText: String = "" // Search text for cities
+    @State private var filteredCities: [DropdownItemModel] = []
     
     var body: some View {
         ZStack {
@@ -34,8 +41,10 @@ struct CitySelectionView: View {
                     isCountryExpanded = true
                 }
                 .onChange(of: selectedCountryItem) { newValue in
-                        viewModel.selectedCountry = newValue.text
-                        selectedCityItem = DropdownItemModel(id: "", text: "")
+                    viewModel.selectedCountry = newValue.text
+                    selectedCityItem = DropdownItemModel(id: "", text: "")
+                    citySearchText = "" // Reset city search when country changes
+                    filteredCities = viewModel.cities // Reset filtered cities
                 }
                 DropdownField(
                     title: "Please Select City",
@@ -62,7 +71,14 @@ struct CitySelectionView: View {
                         .opacity(selectedCityItem.text.isEmpty ? 0.5 : 1)
                 }
                 .disabled(selectedCityItem.text.isEmpty)
-                NavigationLink(destination: WeatherConditionView(weather: viewModel.weatherData, optimalSurfingTimes: viewModel.optimalSurfingTimes, city: selectedCityItem.text, country: selectedCountryItem.text), isActive: $viewModel.isNavigatingToWeather) {
+                NavigationLink(
+                    destination: WeatherConditionView(
+                        weatherAPIManager: weatherManager,
+                        city: selectedCityItem.text,
+                        country: selectedCountryItem.text
+                    ),
+                    isActive: $viewModel.isNavigatingToWeather
+                ) {
                     EmptyView()
                 }
             }
